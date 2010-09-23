@@ -1,0 +1,42 @@
+div.hotspot-img-wrap {
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+div.hotspot-img-wrap img {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+div.hs {
+  position: absolute;
+  border: 1px dashed #f00;
+  background-color: #000;
+  color: #fff;
+}
+.hs-info {
+  padding: 4px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+button.hs_add {
+  padding: 4px 8px;
+  color: #333;
+  background-color: #e3e3e3;
+  text-shadow: #ddd 1px 1px 2px;
+  border-width: 1px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+
+}
+
+button.hs_add:hover,
+button.hs_add:focus {
+  background-color: #ccc;
+}
+button.hs_add:active {
+  background-color: #aaa;
+}
