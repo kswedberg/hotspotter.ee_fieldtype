@@ -1,7 +1,7 @@
 Hotspotter Field Type
 =====================
 
-The Hotspotter field type allows you to create a set of "hot spot" links on an image. More documentation to come.
+The Hotspotter field type allows you to create a set of "hot spot" links on an image.
 
 This field type requires the following:
 
@@ -10,3 +10,5 @@ This field type requires the following:
 * jQuery for the EE Control Panel (CP jQuery)
 * jQuery 1.4+
 * jQuery UI 1.8+
+
+If you have questions about usage, my gmail.com address is kswedberg.
