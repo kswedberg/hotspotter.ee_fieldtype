@@ -2,6 +2,7 @@
 
 if ( ! defined('EXT')) exit('Invalid file request');
 
+
 /**
  * Image Hotspot
  *
@@ -18,8 +19,8 @@ class Hotspotter extends Fieldframe_Fieldtype {
    */
   var $info = array(
     'name'     => 'Hotspotter',
-    'version'  => '1.0.1',
-    'docs_url' => 'http://github.com/kswedberg/hotspotter.ee_fieldtype',
+    'version'  => '1.1.0',
+    'docs_url' => '',
     'no_lang'  => TRUE
   );
 
@@ -90,14 +91,15 @@ class Hotspotter extends Fieldframe_Fieldtype {
 
     // $r = $SD->block('Hotspotter Settings');
 
-    $cell2 =  $DSP->qdiv('defaultBold', 'Select Your File Field')
-            . $SD->select('file_field', $field_settings['file_field'], $this->_get_fields());
-
-
     $r = '<table>';
+
     $r .= $SD->row(array(
       $DSP->qdiv('defaultBold', 'Select Your File Field'),
       $SD->select('file_field', $field_settings['file_field'], $this->_get_fields()),
+    ));
+    $r .= $SD->row(array(
+      $DSP->qdiv('defaultBold', 'Select Your Matrix Field'),
+      $SD->select('matrix_field', $field_settings['matrix_field'], $this->_get_fields()),
     ));
     $r .= $SD->row(array(
           $SD->label('Initial Height'),
@@ -111,10 +113,6 @@ class Hotspotter extends Fieldframe_Fieldtype {
       $SD->label('Should Hotspots be Resizable?'),
       $SD->radio_group('resizable', $field_settings['resizable'], array('yes' => 'yes', 'no' => 'no'))
     ));
-    $r .= $SD->row(array(
-      $SD->label('Allow User-defined Link Text?'),
-      $SD->radio_group('user_defined_text', $field_settings['user_defined_text'], array('yes' => 'yes', 'no' => 'no'))
-    ));
     $r .= '</table>';
     // $r .= $SD->block_c();
     return array('cell2' => $r);
@@ -127,38 +125,39 @@ class Hotspotter extends Fieldframe_Fieldtype {
   {
     global $DSP;
 
-    $r = '<tr id="hotspot-' . $index . '" class="hotspot">';
-    $cell_width = $usertext ? '50%' : '100%';
-
-    $r .= $DSP->td('tableCellOne');
-    $r .= $DSP->qdiv('defaultSmall', $index);
-    $r .= '<input type="hidden" class="hs_id" value="' . $index . '">';
-
-    $hsdims = array('top','left','height','width');
-
-    foreach ($hsdims as $hsdim) {
-      $r .= '<input type="hidden" class="hs_' . $hsdim . '" name="' . $row_id . '[hotspots][' . $index . '][' . $hsdim . ']" value="' . $values[$hsdim] . '">';
-    }
-
-    $r .= $DSP->td_c();
-
-    $r .= $DSP->td('tableCellOne', $cell_width);
-    $r .= $DSP->input_text($row_id . '[hotspots][' . $index . '][link]', $values['link'],'', '', 'hs_link', '80%');
-    $r .= $DSP->td_c();
-
-    if ($usertext):
-      $r .= $DSP->td('tableCellOne', $cell_width);
-      $r .= '<textarea style="width: 80%;" class="hs_link_text" name="' . $row_id . '[hotspots][' . $index . '][link_text]">' . $values['link_text'] . '</textarea>';
-      // $r .= $DSP->input_text($row_id . '[hotspots][' . $index . '][link_text]', $values['link_text'],'', '', 'hs_link_text', '100%');
-      $r .= $DSP->td_c();
-
-    endif;
-    $r .= $DSP->td('tableCellOne');
-    $r .= '<a class="hs_del" href="#">Remove</a>';
-    $r .= $DSP->td_c();
-
-    $r .= '</tr>';
-    return $r;
+    // $r = '<tr id="hotspot-' . $index . '" class="hotspot">';
+    // $cell_width = $usertext ? '50%' : '100%';
+    //
+    // $r .= $DSP->td('tableCellOne');
+    // $r .= $DSP->qdiv('defaultSmall', $index);
+    // $r .= '<input type="hidden" class="hs_id" value="' . $index . '">';
+    //
+    // $hsdims = array('top','left','height','width');
+    //
+    // foreach ($hsdims as $hsdim) {
+    //   $r .= '<input type="hidden" class="hs_' . $hsdim . '" name="' . $row_id . '[hotspots][' . $index . '][' . $hsdim . ']" value="' . $values[$hsdim] . '">';
+    // }
+    //
+    // $r .= $DSP->td_c();
+    //
+    // $r .= $DSP->td('tableCellOne', $cell_width);
+    // $r .= $DSP->input_text($row_id . '[hotspots][' . $index . '][link]', $values['link'],'', '', 'hs_link', '80%');
+    // $r .= $DSP->td_c();
+    //
+    // if ($usertext):
+    //   $r .= $DSP->td('tableCellOne', $cell_width);
+    //   $r .= '<textarea style="width: 80%;" class="hs_link_text" name="' . $row_id . '[hotspots][' . $index . '][link_text]">' . $values['link_text'] . '</textarea>';
+    //   // $r .= $DSP->input_text($row_id . '[hotspots][' . $index . '][link_text]', $values['link_text'],'', '', 'hs_link_text', '100%');
+    //   $r .= $DSP->td_c();
+    //
+    // endif;
+    // $r .= $DSP->td('tableCellOne');
+    // $r .= '<a class="hs_del" href="#">Remove</a>';
+    // $r .= $DSP->td_c();
+    //
+    // $r .= '</tr>';
+    // return $r;
+    return '';
   }
 
   /**
@@ -172,10 +171,13 @@ class Hotspotter extends Fieldframe_Fieldtype {
   function display_field($field_name, $field_data, $field_settings)
   {
     global $DB, $FF, $IN, $DSP;
-
+    $r = '';
     $entry_id = $IN->GBL('entry_id');
     $file_field = $field_settings['file_field'];
-    $usertext = $field_settings['user_defined_text'] == 'yes';
+    $matrix_field = $field_settings['matrix_field'];
+
+    // $r .= '<pre id="karlsw">' . print_r($matrix_field, true) . '</pre>';
+
     $file_dir_id = $FF->ftypes_by_field_id[$file_field]['settings']['options'];
     $file_dir = $DB->query("SELECT url
                             FROM exp_upload_prefs
@@ -197,65 +199,28 @@ class Hotspotter extends Fieldframe_Fieldtype {
     }
 
     // display the image
-    $r  = $DSP->qdiv('box', 'Press the Add Hotspot button to create a hotspot on the image.');
+    // $r  = $DSP->qdiv('box', 'Press the Add Hotspot button to create a hotspot on the image.');
     $r .= '<div id="hotspot-' . $field_name . '" class="hotspot-wrapper">';
-      $r  .= '<div style="display:block; margin: 0 0 10px;"><div class="hotspot-img-wrap"><img class="hotspot-img" src="' . $image_path . '" alt="" /></div></div>';
+    $r  .= '<div style="display:block; margin: 0 0 10px;"><div class="hotspot-img-wrap"><img class="hotspot-img" src="' . $image_path . '" alt="" /></div></div>';
 
-      // existing hotspots
-      $r .= $DSP->table_open(array('class' => 'tableBorder', 'width' => '100%; margin-bottom: 10px'));
-      $r .= $DSP->tr();
-      $r .= $DSP->td('tableHeading');
-      $r .= '<button class="btn hs_add" href="#"><span>Add Hotspot</span></button>';
-      $r .= $DSP->td_c();
-      $r .= $DSP->td('tableHeading');
-      $r .= 'Link URL';
-      $r .= $DSP->td_c();
-      if ($usertext):
-        $r .= $DSP->td('tableHeading');
-        $r .= 'Link Text';
-        $r .= $DSP->td_c();
-      endif;
+    $default_data = $field_settings;
 
-      $r .= $DSP->td('tableHeading');
-      $r .= $DSP->td_c();
+    $default_data['top'] = '0';
+    $default_data['left'] = '0';
+    $default_data['height'] = $field_settings['initial_height'];
+    $default_data['width'] = $field_settings['initial_width'];
+    $default_data['id'] = $field_name;
 
-      $r .= $DSP->tr_c();
-      $n = 1;
-
-      $default_data = array(
-        'top'=>'0',
-        'left'=>'0',
-        'height' => $field_settings['initial_height'],
-        'width' => $field_settings['initial_width'],
-        'link' => '',
-      );
-      if ($usertext) {
-        $default_data['link_text'] = '';
-      }
-
-      foreach ($field_data['hotspots'] as $k => $v)
-      {
-        $cur_row = $this->_build_row($field_name, $n, $v, $usertext);
-        $r .= $cur_row;
-        $n++;
-      }
-      $r .= $DSP->table_close();
 
     $r .= '</div>';
 
-    // _build_row($row_id, $index, $values, $usertext)
-
-
-        $row_tmpl = $this->_build_row($field_name, '{{index}}', $default_data, $usertext);
-        $row_tmpl = str_replace("'", "\'", $row_tmpl);
-        $row_tmpl = preg_replace('/\r?\n/','', $row_tmpl);
-        $inlinejs = json_encode($field_settings);
-        $inlinejs = 'var HOTSPOTTER = ' . $inlinejs . ";\n";
-        $inlinejs .= 'HOTSPOTTER.tmpl=\'' . $row_tmpl . '\';';
-        $this->insert_js($inlinejs);
-        $this->include_js('scripts/mustache.js');
-        $this->include_js('scripts/hotspotter.js');
-        $this->include_css('styles/hotspotter.css');
+    $default_json = json_encode($default_data);
+    $inlinejs = 'var HOTSPOTTER = HOTSPOTTER || [];' ."\n";
+    $inlinejs .= 'HOTSPOTTER.push(' . $default_json . ');' . "\n";
+    $this->insert_js($inlinejs);
+    $this->include_js('scripts/mustache.js');
+    $this->include_js('scripts/hotspotter.js');
+    $this->include_css('styles/hotspotter.css');
 
     return $r;
   }

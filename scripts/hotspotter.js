@@ -1,62 +1,116 @@
 
-(function($, doc, $doc) {
+(function($, doc, $doc, hs) {
 
-var rowNum = 0;
-$doc.ready(function() {
-  var uiStyles = $('<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.3/themes/base/jquery-ui.css" rel="stylesheet" type="text/css">')[0];
-  doc.getElementsByTagName('head')[0].appendChild(uiStyles);
+// LIMITING TO ONE HOTSPOTTER PER ENTRY FOR NOW
+hs = hs[0];
+var styleProps = ['top', 'left', 'height', 'width'],
+    cols = {index: 0};
 
-  $('div.hotspot-wrapper').each(function() {
+$doc.bind('resetMatrix', function(event, tid) {
 
-    $(this).find('tr.hotspot').drawSpot(this);
-    rowNum = $(this).find('tr.hotspot').length;
-  });
+  var $matrix = $(event.target);
+  $matrix.updateMatrix();
 
-
-  $('button.hs_add').live('click', function(event) {
-    event.preventDefault();
-    $(this).addRow();
-  });
-
-  $('a.hs_del').live('click', function(event) {
-    event.preventDefault();
-    $(this).removeRow();
-  });
-
-  $('img.hotspot-img').shrinkWrap();
 });
 
 
-var styleProps = ['top', 'left', 'height', 'width'];
+$doc.ready(function() {
+  var uiStyles = $('<link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.3/themes/base/jquery-ui.css" rel="stylesheet" type="text/css">')[0];
+  doc.getElementsByTagName('head')[0].appendChild(uiStyles);
+  var matrixId = 'field_id_' + hs.matrix_field,
+      $matrixTable = $('#' + matrixId).find('table').eq(0);
+
+  // set up matrix cols
+  $matrixTable.find('thead th').each(function(index) {
+    if (index !== 0) {
+      cols[$.trim($(this).text())] = index;
+    }
+  });
+
+  // set up matrix
+  $matrixTable.updateMatrix();
+
+  // make sure image's wrapper div is same dimensions as image
+  $('img.hotspot-img').shrinkWrap();
+
+
+}); // ready
+
+
 
 $.extend($.fn, {
-  drawSpot: function(wrap) {
-    if (!wrap) {
-      wrap = $(this).closest('.hotspot-wrapper')[0];
-    }
-    var wrapId = wrap.id,
-        $imgWrap = $('#' + wrapId).find('.hotspot-img-wrap');
+  updateDimensions: function(source) {
+    this.each(function() {
+      var $rowCells = $(this).children();
 
+      $.each(styleProps, function(index, val) {
+        // cols[val] is the index of the cell's column for each style property
+        var propIndex = cols[val];
+
+        var $valInput = $rowCells.eq(propIndex).find('textarea');
+        $valInput.val(function(i, v) {
+          // current value is v. if no source, use current value if it's there or default value if it's not;
+          if (!source) {
+            v = parseFloat(v) || hs[val];
+          } else {
+            v = source[val] || hs[val];
+          }
+
+          return parseFloat(v) + 'px';
+        });
+      });
+    });
+
+    return this;
+  },
+  getDimensions: function(props) {
+    // props is an array
+    props = props || styleProps;
+    // only works on one row at a time!!!
+    var dimensions = {};
+    this.each(function() {
+      var $rowCells = $(this).children();
+      $.each(props, function(index, val) {
+        // cols[val] is the index of the cell's column for each style property
+        var propIndex = cols[val];
+        dimensions[val] = $rowCells.eq(propIndex).find('textarea').val();
+      });
+    });
+    return dimensions;
+  },
+  updateMatrix: function(source) {
+    // source is typically going to be entered if this is coming from a draggable/resizable
+    // each matrix
+    this.each(function() {
+      // each tbody tr in that matrix
+      $(this).find('tbody tr').each(function(index) {
+        this.id = $(this).find('th input:hidden').val() + '-row';
+        $(this)
+        .updateDimensions(source)
+        .drawSpot();
+
+      });
+
+    });
+
+    return this;
+  },
+  drawSpot: function() {
+    var wrapId = 'hotspot-' + hs.id,
+        $imgWrap = $('#' + wrapId).find('.hotspot-img-wrap');
     this.each(function(index) {
 
       var $row = $(this),
-          idx = parseInt($row.find('.hs_id').val(), 10),
-          hsId = wrapId + '_hs_' + idx,
-          css = {},
-          link = $row.find('.hs_link').val(),
+          rowId = this.id,
+          rootId = rowId ? rowId.split('-')[0] : 'row-' + index,
+          hsId = rootId + '-hs',
+          idx = $row.find('th span:first').text(),
+          css = $row.getDimensions(),
           $hotspot;
-
-      $.each(styleProps, function(i, val) {
-        var prop =  $row.find('.hs_' + val).val();
-        if (/\d$/.test(prop)) {
-          prop += 'px';
-        }
-        css[val] = prop;
-      });
-
 
       if ( $('#' + hsId).length ) {
         $hotspot = $('#' + hsId);
+        $hotspot.find('.hs-info').text(idx);
       } else {
         $hotspot = $('<div></div>', {
           id: hsId,
@@ -65,11 +119,11 @@ $.extend($.fn, {
         })
         .appendTo($imgWrap);
 
-        $hotspot.data('rowid', 'hotspot-' + idx);
+        $hotspot.data('rowid', rowId);
 
         var justdrag = $.extend({}, dragsize, {cursor: 'move'});
         $hotspot.draggable(justdrag);
-        if (HOTSPOTTER.resizable == 'yes') {
+        if (hs.resizable == 'yes') {
           $hotspot.resizable(dragsize);
         }
 
@@ -81,58 +135,21 @@ $.extend($.fn, {
     return this;
 
   },
-  addRow: function() {
-    var $wrapper = this.closest('.hotspot-wrapper');
-    var rowData = {
-      fieldId: $wrapper.attr('id').split('-').pop(),
-      height: '30',
-      width: '30',
-      index: function() {
-        return rowNum;
-      }
-    };
-
-    rowNum++;
-    var newRow = $.mustache(rowTemplate, rowData);
-    $wrapper
-      .find('tr').last().after(newRow)
-        .next().drawSpot($wrapper[0]);
-
-
-
-
-    return this;
-  },
-  removeRow: function() {
-
-    return this.each(function() {
-      var $row = $(this).closest('tr.hotspot'),
-          rowid = $row.attr('id');
-
-      $row.closest('.hotspot-wrapper').find('.hs').filter(function() {
-        return $(this).data('rowid') == rowid;
-      }).fadeOut(200, function() {
-        $(this).remove();
-      });
-
-      $row.remove();
-    });
-  },
   shrinkWrap: function() {
 
     return this.each(function() {
       if (this.complete) {
-        dims(this);
+        setParentDims(this);
       } else {
         $(this).bind('load', function() {
-          dims(this);
+          setParentDims(this);
         });
       }
     });
   }
 });
 
-var dims = function(el) {
+var setParentDims = function(el) {
   var dims = {
     width: $(el).css('width'),
     height: $(el).css('height')
@@ -147,31 +164,9 @@ var dragsize = {
         $row = $('#' + rowid),
         css = $.extend({}, ui.size, ui.position);
 
-    $.each(css, function(key, val) {
-      $row.find('.hs_' + key).val(val);
-    });
+    $row.updateDimensions(css);
   }
 };
 
-var rowTemplate = HOTSPOTTER.tmpl;
-// var rowTemplate = [
-//   '<tr class="hotspot" id="hotspot-{{index}}">',
-//     '<td class="tableCellOne">',
-//       '<div class="defaultSmall">{{index}}</div>',
-//       '<input type="hidden" value="{{index}}" class="hs_id">',
-//       '<input type="hidden" value="0" name="{{fieldId}}[hotspots][{{index}}][top]" class="hs_top">',
-//       '<input type="hidden" value="0" name="{{fieldId}}[hotspots][{{index}}][left]" class="hs_left">',
-//       '<input type="hidden" value="{{height}}" name="{{fieldId}}[hotspots][{{index}}][height]" class="hs_height">',
-//       '<input type="hidden" value="{{width}}" name="{{fieldId}}[hotspots][{{index}}][width]" class="hs_width">',
-//     '</td>',
-//     '<td style="width: 50%;" class="tableCellOne">',
-//       '<input style="width: 100%" type="text" class="hs_link" value="" id="{{fieldId}}hotspots{{index}}link" name="{{fieldId}}[hotspots][{{index}}][link]">',
-//     '</td>',
-//     '<td class="tableCellOne">',
-//       '<a href="#" class="hs_del">Remove</a>',
-//     '</td>',
-//   '</tr>'
-// ].join('');
 
-
-})( jQuery, document, jQuery(document) );
+})( jQuery, document, jQuery(document), HOTSPOTTER );

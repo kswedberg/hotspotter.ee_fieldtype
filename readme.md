@@ -11,4 +11,6 @@ This field type requires the following:
 * jQuery 1.4+
 * jQuery UI 1.8+
 
+Note: The Hotspotter script on the master branch requires a field using the matrix field type to be designated in the field settings. This matrix field must have at minimum these 4 columns: top, left, width, height
+
 If you have questions about usage, my gmail.com address is kswedberg.
