@@ -4,12 +4,23 @@
 // LIMITING TO ONE HOTSPOTTER PER ENTRY FOR NOW
 hs = hs[0];
 var styleProps = ['top', 'left', 'height', 'width'],
-    cols = {index: 0};
+    cols = {index: 0},
+    wrapId = 'hotspot-' + hs.id;
 
 $doc.bind('resetMatrix', function(event, tid) {
 
-  var $matrix = $(event.target);
-  $matrix.updateMatrix();
+  var $matrixTable = $(event.target);
+  setTimeout(function() {
+    $matrixTable.updateMatrix();
+    
+    $('#' + wrapId).find('.hs').each(function() {
+      var rowId = this.id.split('-hs')[0] + '-row';
+      if ( !document.getElementById(rowId) ) {
+        $(this).remove();
+      }
+    });
+  }, 500);
+  
 
 });
 
@@ -19,21 +30,21 @@ $doc.ready(function() {
   doc.getElementsByTagName('head')[0].appendChild(uiStyles);
   var matrixId = 'field_id_' + hs.matrix_field,
       $matrixTable = $('#' + matrixId).find('table').eq(0);
-
+      
   // set up matrix cols
   $matrixTable.find('thead th').each(function(index) {
     if (index !== 0) {
       cols[$.trim($(this).text())] = index;
     }
   });
-
+  
   // set up matrix
   $matrixTable.updateMatrix();
-
-  // make sure image's wrapper div is same dimensions as image
+  
+  // make sure image's wrapper div is same dimensions as image 
   $('img.hotspot-img').shrinkWrap();
-
-
+  
+  
 }); // ready
 
 
@@ -42,11 +53,11 @@ $.extend($.fn, {
   updateDimensions: function(source) {
     this.each(function() {
       var $rowCells = $(this).children();
-
+          
       $.each(styleProps, function(index, val) {
         // cols[val] is the index of the cell's column for each style property
         var propIndex = cols[val];
-
+        
         var $valInput = $rowCells.eq(propIndex).find('textarea');
         $valInput.val(function(i, v) {
           // current value is v. if no source, use current value if it's there or default value if it's not;
@@ -60,7 +71,7 @@ $.extend($.fn, {
         });
       });
     });
-
+    
     return this;
   },
   getDimensions: function(props) {
@@ -83,30 +94,35 @@ $.extend($.fn, {
     // each matrix
     this.each(function() {
       // each tbody tr in that matrix
-      $(this).find('tbody tr').each(function(index) {
+      $(this).children('tbody').children('tr').each(function(index) {
         this.id = $(this).find('th input:hidden').val() + '-row';
         $(this)
         .updateDimensions(source)
         .drawSpot();
-
+        
       });
-
+      
     });
-
+    
     return this;
   },
   drawSpot: function() {
-    var wrapId = 'hotspot-' + hs.id,
-        $imgWrap = $('#' + wrapId).find('.hotspot-img-wrap');
-    this.each(function(index) {
+    var $imgWrap = $('#' + wrapId).find('.hotspot-img-wrap');
 
+    // loop through matrix rows
+    this.each(function(index) {
+      
       var $row = $(this),
           rowId = this.id,
-          rootId = rowId ? rowId.split('-')[0] : 'row-' + index,
+          rootId = rowId.split('-')[0],
           hsId = rootId + '-hs',
           idx = $row.find('th span:first').text(),
           css = $row.getDimensions(),
           $hotspot;
+      
+      if (!rootId) {
+        return true;
+      }
 
       if ( $('#' + hsId).length ) {
         $hotspot = $('#' + hsId);
@@ -126,11 +142,10 @@ $.extend($.fn, {
         if (hs.resizable == 'yes') {
           $hotspot.resizable(dragsize);
         }
-
+        
       }
 
       $hotspot.css(css).fadeTo(800, 0.5);
-
     });
     return this;
 
