@@ -12,7 +12,7 @@ $doc.bind('resetMatrix', function(event, tid) {
   var $matrixTable = $(event.target);
   setTimeout(function() {
     $matrixTable.updateMatrix();
-    
+
     $('#' + wrapId).find('.hs').each(function() {
       var rowId = this.id.split('-hs')[0] + '-row';
       if ( !document.getElementById(rowId) ) {
@@ -20,7 +20,7 @@ $doc.bind('resetMatrix', function(event, tid) {
       }
     });
   }, 500);
-  
+
 
 });
 
@@ -30,21 +30,28 @@ $doc.ready(function() {
   doc.getElementsByTagName('head')[0].appendChild(uiStyles);
   var matrixId = 'field_id_' + hs.matrix_field,
       $matrixTable = $('#' + matrixId).find('table').eq(0);
-      
+
   // set up matrix cols
   $matrixTable.find('thead th').each(function(index) {
     if (index !== 0) {
       cols[$.trim($(this).text())] = index;
     }
   });
-  
+
   // set up matrix
   $matrixTable.updateMatrix();
-  
-  // make sure image's wrapper div is same dimensions as image 
-  $('img.hotspot-img').shrinkWrap();
-  
-  
+
+  // make sure image's wrapper div is same dimensions as image
+  var $hotspotImg = $('img.hotspot-img').shrinkWrap();
+
+  // workaround for when hostpotter image's wrapper is initially hidden
+  // and height/width appear as 0.
+  $hotspotImg
+    .closest('div.publishRows').children().first().find('label')
+    .bind('click', function(event) {
+      $hotspotImg.shrinkWrap();
+    });
+
 }); // ready
 
 
@@ -53,11 +60,11 @@ $.extend($.fn, {
   updateDimensions: function(source) {
     this.each(function() {
       var $rowCells = $(this).children();
-          
+
       $.each(styleProps, function(index, val) {
         // cols[val] is the index of the cell's column for each style property
         var propIndex = cols[val];
-        
+
         var $valInput = $rowCells.eq(propIndex).find('textarea');
         $valInput.val(function(i, v) {
           // current value is v. if no source, use current value if it's there or default value if it's not;
@@ -71,7 +78,7 @@ $.extend($.fn, {
         });
       });
     });
-    
+
     return this;
   },
   getDimensions: function(props) {
@@ -99,11 +106,11 @@ $.extend($.fn, {
         $(this)
         .updateDimensions(source)
         .drawSpot();
-        
+
       });
-      
+
     });
-    
+
     return this;
   },
   drawSpot: function() {
@@ -111,7 +118,7 @@ $.extend($.fn, {
 
     // loop through matrix rows
     this.each(function(index) {
-      
+
       var $row = $(this),
           rowId = this.id,
           rootId = rowId.split('-')[0],
@@ -119,7 +126,7 @@ $.extend($.fn, {
           idx = $row.find('th span:first').text(),
           css = $row.getDimensions(),
           $hotspot;
-      
+
       if (!rootId) {
         return true;
       }
@@ -142,7 +149,7 @@ $.extend($.fn, {
         if (hs.resizable == 'yes') {
           $hotspot.resizable(dragsize);
         }
-        
+
       }
 
       $hotspot.css(css).fadeTo(800, 0.5);
